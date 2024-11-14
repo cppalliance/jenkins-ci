@@ -1,0 +1,306 @@
+pipeline {
+
+    agent {
+        node {
+             label 'jenkinspool1'
+         }
+     }
+
+    //agent {
+    //    docker {
+    //      image 'cppalliance/boost_superproject_build:24.04-v1'
+    //      // label 'jenkinspool1'
+    //      }
+    //}
+
+    stages {
+        stage('Preclean Workspace') {
+            steps {
+                sh '''#!/bin/bash
+                set -xe
+                rm -rf * .*
+
+                # lcov is using ../boost-root. It could re-used but what if
+                # multiple jobs are sharing that directory over time.  For now, clear it.
+                rm -rf ../boost-root || true
+
+                # The lcov tests are also using the following directory. Remove that.
+                TMPREPONAME=$(basename -s .git "$(git config --get remote.origin.url)")
+                TMPDIRNAME=${TMPREPONAME}-target-branch-iteration
+                rm -rf ../${TMPDIRNAME} || true
+                '''
+                checkout scm
+            }
+        }
+
+        stage('Set Variables') {
+            steps {
+                sh '''#!/bin/bash -xe
+                echo "" > jenkinsjobinfo.sh
+                chmod 777 jenkinsjobinfo.sh
+                REPONAME=$(basename -s .git "$(git config --get remote.origin.url)")
+                # REPONAME=$(basename `git rev-parse --show-toplevel`)
+                DNSREPONAME=$(echo $REPONAME | tr '_' '-')
+                ORGANIZATION=$(basename $(dirname "${GIT_URL}"))
+                echo "export JENKINS_CI_REPO=cppalliance/jenkins-ci" >> jenkinsjobinfo.sh
+                echo "export JENKINS_CI_REPO_BRANCH=master" >> jenkinsjobinfo.sh
+                # echo "export JENKINS_CI_REPO=sdarwin/jenkins-ci" >> jenkinsjobinfo.sh
+                # echo "export JENKINS_CI_REPO_BRANCH=testing" >> jenkinsjobinfo.sh
+                echo "export PRTEST=prtest" >> jenkinsjobinfo.sh
+                echo "export REPONAME=${REPONAME}" >> jenkinsjobinfo.sh
+                echo "export DNSREPONAME=${DNSREPONAME}" >> jenkinsjobinfo.sh
+                echo "export ORGANIZATION=${ORGANIZATION}" >> jenkinsjobinfo.sh
+                echo "export ONLY_BUILD_ON_DOCS_MODIFICATION=false" >> jenkinsjobinfo.sh
+                echo "export PATH_TO_DOCS=libs/${REPONAME}/doc" >> jenkinsjobinfo.sh
+                '''
+            }
+        }
+
+        stage('Diagnostics') {
+            steps {
+                sh '''#!/bin/bash
+                set -x
+                # not set -e. errors may occur in diagnostics
+                cat jenkinsjobinfo.sh
+                . jenkinsjobinfo.sh
+                ls -al
+                cat /etc/os-release
+                pwd
+                env 
+                whoami
+                touch $(date "+%A-%B-%d-%T-%y")
+                mount | grep ^/dev/ | grep -v /etc | awk '{print \$3}'
+                git branch
+                git branch -avv
+                true
+                '''
+            }
+        }
+
+        stage('Prebuild script') {
+            when {
+                anyOf{
+                    branch 'develop'
+                    branch 'master'
+                    expression { env.CHANGE_ID != null }
+                }
+           } 
+            steps {
+                sh '''#!/bin/bash
+                set -xe
+                . jenkinsjobinfo.sh
+                curl -f -o jenkins_prebuild_script.sh https://raw.githubusercontent.com/${JENKINS_CI_REPO}/${JENKINS_CI_REPO_BRANCH}/scripts/${ORGANIZATION}_${REPONAME}_lcov_prebuild.sh || true
+                if [ -f jenkins_prebuild_script.sh ]; then
+                    chmod 755 jenkins_prebuild_script.sh
+                    ./jenkins_prebuild_script.sh
+                fi
+                '''
+            }
+         }
+
+        stage('Check if docs were modified') {
+            when {
+                anyOf{
+                    expression { env.CHANGE_ID != null }
+                }
+           }
+            steps {
+                sh '''#!/bin/bash
+                set -xe
+                . jenkinsjobinfo.sh
+
+                if [ "$ONLY_BUILD_ON_DOCS_MODIFICATION" == "true" ]; then
+                    echo "Starting check to see if docs have been updated."
+                    git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+                    git fetch origin develop
+                    mergebase=$(git merge-base HEAD remotes/origin/develop)
+                    counter=0
+                    for i in $(git diff --name-only HEAD $mergebase)
+                    do
+                      echo "file is $i"
+                      if [[ $i =~ ^doc/ ]]; then
+                        counter=$((counter+1))
+                      fi
+                    done
+
+                    if [ "$counter" -eq "0" ]; then
+                      echo "No docs found. Exiting."
+                      # exit 1
+                      echo "export AUTOCANCEL=true" >> jenkinsjobinfo.sh
+                    else
+                      echo "Found $counter docs. Proceeding."
+                    fi
+                 else
+                     echo "Not checking if docs were updated. Always build."
+                 fi
+                '''
+            }
+         }
+
+        stage('Determine if the job should exit') {
+            when {
+                anyOf{
+                    expression { env.CHANGE_ID != null }
+                }
+            }
+             environment {
+                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
+                  AUTOCANCEL = """${sh(
+                  returnStdout: true,
+                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${AUTOCANCEL}"'
+              )}"""
+             }
+              steps {
+                  script {
+                      if (env.AUTOCANCEL == "true") {
+                         currentBuild.result = 'ABORTED'
+                         error("Aborting the build.")
+                       }
+                  }
+              }
+         }
+
+        // To skip this step, and actually all steps, adjust the job's Filter regex in the Jenkins UI
+        // (develop|master|PR-.*) will build all branches
+        // (PR-.*) will build pull requests. Etc.
+        stage('Build docs') {
+            when {
+                anyOf{
+                    branch 'develop'
+                    branch 'master'
+                    expression { env.CHANGE_ID != null }
+                }
+            } 
+
+            steps {
+                sh '''#!/bin/bash
+                set -xe
+                . jenkinsjobinfo.sh
+                export pythonvirtenvpath=/opt/venvboostdocs
+                if [ -f ${pythonvirtenvpath}/bin/activate ]; then
+                    source ${pythonvirtenvpath}/bin/activate
+                fi
+
+                # Is there a custom build script? Often not. But let's check:
+
+                curl -f -o jenkins_build_script.sh https://raw.githubusercontent.com/${JENKINS_CI_REPO}/${JENKINS_CI_REPO_BRANCH}/scripts/${ORGANIZATION}_${REPONAME}_lcov_build.sh || true
+                if [ -f jenkins_build_script.sh ]; then
+                    chmod 755 jenkins_build_script.sh
+                    ./jenkins_build_script.sh
+                    exit 0
+                fi
+
+                # Otherwise, proceed using standard build steps:
+
+                export pythonvirtenvpath=/opt/venv
+                if [ -f ${pythonvirtenvpath}/bin/activate ]; then
+                    source ${pythonvirtenvpath}/bin/activate
+                fi 
+                mkdir -p ~/.local/bin
+                GITHUB_REPO_URL="https://github.com/cppalliance/ci-automation/raw/master"
+                DIR="scripts"
+                FILENAME="lcov-jenkins-gcc-13.sh"
+                URL="${GITHUB_REPO_URL}/$DIR/$FILENAME"
+                FILE=~/.local/bin/$FILENAME
+                if [ ! -f "$FILE" ]; then
+                    curl -s -S --retry 10 -L -o $FILE $URL && chmod 755 $FILE
+                fi
+                
+                $FILE 
+                '''
+                }
+            }
+
+        stage('Postbuild script') {
+            when {
+                anyOf{
+                    branch 'develop'
+                    branch 'master'
+                    expression { env.CHANGE_ID != null }
+                }
+           }
+            steps {
+                sh '''#!/bin/bash
+                set -xe
+
+                . jenkinsjobinfo.sh
+                curl -f -o jenkins_postbuild_script.sh https://raw.githubusercontent.com/${JENKINS_CI_REPO}/${JENKINS_CI_REPO_BRANCH}/scripts/${ORGANIZATION}_${REPONAME}_lcov_postbuild.sh || true
+                if [ -f jenkins_postbuild_script.sh ]; then
+                    chmod 755 jenkins_postbuild_script.sh
+                    ./jenkins_postbuild_script.sh
+                fi
+                '''
+            }
+         }
+
+        stage('Pull requests: Upload to S3') {
+            when { 
+                anyOf{
+                    expression { env.CHANGE_ID != null }
+                }
+            }
+
+            environment {
+                // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
+                 REPONAME = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${REPONAME}"'
+             )}"""
+                 DNSREPONAME = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DNSREPONAME}"'
+             )}"""
+                 PRTEST = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PRTEST}"'
+             )}"""
+                 PATH_TO_DOCS = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PATH_TO_DOCS}"'
+             )}"""
+                 DIFF2HTML = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DIFF2HTML}"'
+             )}"""
+
+            }
+
+            steps {
+                withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
+
+                    s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/genhtml/",  workingDir: "genhtml" , includePathPattern:"**")
+                    s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/gcovr/",  workingDir: "gcovr" , includePathPattern:"**")
+
+                }
+                script {
+
+                    commenttext = "GCOVR code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html)\nLCOV code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html)\nCoverage Diff [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt)" 
+
+                    pullRequest.comment(commenttext)
+
+                }
+            }
+        }
+
+        stage('Post Diagnostics') {
+            steps {
+                sh '''#!/bin/bash
+                set -x
+                # not set -e. errors may occur in diagnostics
+                cat jenkinsjobinfo.sh
+                . jenkinsjobinfo.sh
+                ls -al
+                cat /etc/os-release
+                pwd
+                env
+                whoami
+                touch $(date "+%A-%B-%d-%T-%y") 
+                mount | grep ^/dev/ | grep -v /etc | awk '{print \$3}' 
+                git branch
+                git branch -avv
+                true
+                '''
+            }
+        }
+    }
+}

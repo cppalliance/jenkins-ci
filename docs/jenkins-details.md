@@ -99,10 +99,54 @@ Dashboard -> Manage Jenkins -> Plugins
 - AWS Credentials Plugin 
 - Pipeline: GitHub
 - Remote Jenkinsfile Provider
+- Amazon EC2 plugin
 
-Add a credential: github-cppalliance-bot . It's a "username with password".  In reality, username with a token. This is a github account.   
+Credentials:  
 
-Another credential: cppalliance-bot-aws-user, AWS credential access to S3.
+Add each of these credentials.  
+
+While it may be convenient to have access to the same credentials already in use, and faster to set up, in fact all credentials can be recreated/regenerated/reassigned. The same exact credentials are not needed. Issue new tokens. Create new users. With permissions in the AWS and github accounts.  
+
+github-cppalliance-bot . It's a "username with password".  In reality, username with a token. This is a github account , cppalliance-bot  
+
+cppalliance-bot-aws-user, AWS credential access to S3. Permissions to S3. 
+
+jenkinsec2plugin , AKIAQWC... , this is an "aws credential", with key/secret to launch instances in the cloud. While this could be
+		the same as the previous cppalliance-bot-aws-user, it happens to be a separate user.  
+
+nodejenkins-private-key - an ssh key, where you enter a private key, that will be used to ssh into the auto-scaled cloud nodes that 
+       jenkinsec2plugin is launching.
+
+Cloud:  
+
+Manage Jenkins->Clouds->New Cloud  
+name: cloud-jenkinspool1  
+ec2 creds: AKIAQWC... (jenkinsec2plugin)  
+region: us-east-1  
+ec2-keypair: nodejenkins-private-key  
+description: jenkinspool1  
+ami: ami-0b1cd4177a6d9ee12 (will vary)  
+size: t3xlarge  
+security group names: jenkinsnode  
+remote filesystem: /jenkins  
+remote user: nodejenkins  
+ssh port: 22  
+labels: jenkinspool1  
+usage: only when labels match  
+idle termination: 6  
+Advanced:  
+executor: 1  
+min: 0  
+min: 0  
+connection strategy: public dns  
+host verification: off  
+max uses: -1  
+
+See docker/packer folder to run packer and generate the AMI.  The AMI id will be entered in the above Cloud configuration.  
+
+The pool is referenced via the label jenkinspool1.
+
+Not all jobs use the cloud pool. At the moment many doc previews are built locally on the jenkins host itself, using docker but not remote cloud agents. 
 
 Install Docker. Add Jenkins to docker group. Restart jenkins.   
 
@@ -274,7 +318,3 @@ SSH into jenkins.cppalliance.org, go to root/scripts, and run:
 Certbot + Cloudflare seem to only support 15 domains per cert.  Create certbot3.sh, certbot4.sh, etc. as needed.  
 
 Copies of these scripts are found in the nginx directory here in this repo.   
-
-
-
-
