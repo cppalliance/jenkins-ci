@@ -8,6 +8,7 @@
 # (See accompanying file LICENSE_1_0.txt or copy at http://boost.org/LICENSE_1_0.txt)
 
 set -e
+# set -x
 
 scriptname="create-jenkins-job.sh"
 scriptlocation=$(pwd)
@@ -21,6 +22,7 @@ scriptlocation=$(pwd)
 
 # shellcheck disable=SC2034
 github_test_org="sdarwin"
+timestamper=$(date "+%Y-%m-%d-%H-%M-%S")
 
 # READ IN COMMAND-LINE OPTIONS
 
@@ -32,7 +34,7 @@ while true ; do
     case "$1" in
         -h|--help)
             helpmessage="""
-usage: $scriptname [-h] [url_of_library_repo]
+usage: $scriptname [-h] [library_repo]
 
 Builds library documentation.
 
@@ -40,7 +42,7 @@ optional arguments:
   -h, --help            Show this help message and exit
   -d, --deploy          Convert an initial test job to production
 standard arguments:
-  url_of_library_repo	Example: https://github.com/acme/example
+  library_repo	Example: boostorg/asio
 """
 
             echo ""
@@ -68,12 +70,13 @@ if [ -z "${GH_TOKEN}" ]; then
 fi
 
 if [ -n "$1" ]; then
-    repo_url=$1
+    repo_stub=$1
+    repo_url=htpps://github.com/$1
     repo_name=$(basename -s .git "${repo_url}")
     # shellcheck disable=SC2034,SC2046
     repo_org=$(basename $(dirname "${repo_url}"))
 else
-    echo "Repo URL not set. Exiting."
+    echo "Repo not set. Exiting."
     exit 1
 fi
 
@@ -131,16 +134,16 @@ function initial_main_setup {
         
         git config user.name testbot
         git config user.email testbot@example.com
-        
+
         git remote set-url origin "https://testbot:${GH_TOKEN}@github.com/${github_test_org}/${repo_name}"
-        
+
         git add .
         git commit -m "testing pull request doc previews"
         git push --set-upstream origin prtest
-        
+
         # For security, let's put the URL back to normal
         git remote set-url origin "https://github.com/${github_test_org}/${repo_name}"
-        
+
         gh pr create --base develop -R "${github_test_org}/${repo_name}" --title "testing pull request doc previews" --body "Don't merge this PR"
     fi
     
@@ -196,11 +199,132 @@ function deploy_job {
     java -jar /usr/bin/jenkins-cli.jar -s http://localhost:8080 -auth "$JENKINS_USER:$JENKINS_PASSWORD" reload-configuration
 }
 
+function prepare_testing_branch {
+
+    echo ""
+    echo "Now in the function prepare_testing_branch"
+    echo "When working on Jenkins, the idea is to test your changes first, in the testing branch of the github_test_org github organization."
+    echo "Currently github_test_org==${github_test_org}, and so the testing repo is https://github.com/${github_test_org}/jenkins-ci, branch: testing"
+    echo "This function will checkout the branch in ~/github/${github_test_org}/jenkins-ci"
+    echo "From there, 'git push' your changes to github. Run tests."
+    echo "The jobs themselves are configured to reference that branch, and will need to be modified right before going live, to again point to production."
+    echo ""
+
+    previousdir=$(pwd)
+    mkdir -p "$HOME/github/${github_test_org}"
+    cd "$HOME/github/${github_test_org}"
+    if [ ! -d jenkins-ci ]; then
+        git clone -b testing "https://github.com/${github_test_org}/jenkins-ci"
+    fi
+    cd jenkins-ci
+    git fetch origin
+    git remote add upstream https://github.com/cppalliance/jenkins-ci || true
+    git fetch origin
+    git fetch upstream
+    if git branch -vv | grep "origin/testing" ; then
+        echo "on the correct branch"
+    else
+        git checkout testing || git checkout --track origin/testing
+    fi
+    if git diff --cached --exit-code > /dev/null ; then
+        echo "git diff --cached ok"
+    else
+        echo "git diff has a diff. Please resolve this manually. Not preparing the testing branch. Exiting from this function."
+        sleep 5
+        cd "${previousdir}"
+        return "0"
+    fi
+
+    if git diff --exit-code > /dev/null ; then
+        echo "git diff ok"
+    else
+        echo "git diff has a diff. Please resolve this manually. Not preparing the testing branch. Exiting from this function."
+        sleep 5
+        cd "${previousdir}"
+        return "0"
+    fi
+    if git diff origin/testing --cached --exit-code > /dev/null ; then
+        echo "git diff --cached ok"
+    else
+        echo "git diff origin/testing has a diff. Please resolve this manually. Not preparing the testing branch. Exiting from this function."
+        sleep 5
+        cd "${previousdir}"
+        return "0"
+    fi
+
+    if git diff origin/testing --exit-code > /dev/null ; then
+        echo "git diff ok"
+    else
+        echo "git diff origin/testing has a diff. Please resolve this manually. Not preparing the testing branch. Exiting from this function."
+        sleep 5
+        cd "${previousdir}"
+        return "0"
+    fi
+
+    git checkout master || git checkout --track origin/master
+    git pull
+    git merge upstream/master
+    git branch -d testing
+    git checkout -b testing
+    echo "Testing branch configured successfully"
+    sleep 5
+    cd "${previousdir}"
+}
+
+function check_in_testing_branch {
+
+    newtargetbranch="${repo_name}-${timestamper}"
+    previousdir=$(pwd)
+    cd "$HOME/github/${github_test_org}/jenkins-ci/scripts"
+    if [ -f "${github_test_org}_${repo_name}_prebuild.sh" ]; then
+        mv "${github_test_org}_${repo_name}_prebuild.sh" "${repo_org}_${repo_name}_prebuild.sh"
+    fi
+    if [ -f "${github_test_org}_${repo_name}_build.sh" ]; then
+        mv "${github_test_org}_${repo_name}_build.sh" "${repo_org}_${repo_name}_build.sh"
+    fi
+    if [ -f "${github_test_org}_${repo_name}_postbuild.sh" ]; then
+        mv "${github_test_org}_${repo_name}_postbuild.sh" "${repo_org}_${repo_name}_prebuild.sh"
+    fi
+    git add .
+    if ! git diff-index --quiet HEAD; then
+        git commit -m "${repo_stub}"
+    fi
+    git checkout -b "test-backup-${timestamper}"
+    git checkout master
+    git pull
+    git checkout -b "${newtargetbranch}"
+    git merge --squash testing
+    git add .
+    if ! git diff-index --quiet HEAD; then
+        git commit -m "${repo_stub}"
+    fi
+
+    git remote set-url origin "https://testbot:${GH_TOKEN}@github.com/${github_test_org}/jenkins-ci"
+    git push --set-upstream origin "${newtargetbranch}"
+    # For security, let's put the URL back to normal
+    git remote set-url origin "https://github.com/${github_test_org}/jenkins-ci"
+
+    gh pr create --base master -R "cppalliance/jenkins-ci" --title "${repo_stub}" --body "Update jenkins-ci: ${repo_stub}"
+    read -r -p "Created a PR on jenkins-ci. Please review and merge it. Do you want to continue? " -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        echo "continuing"
+    else
+        echo "did not receive a Yy. Exiting."
+        exit 1
+    fi
+
+    cd "${previousdir}"
+}
+
 if [ "$deployoption" == "yes" ]; then
     # After the job has been tested:
+    check_in_testing_branch
     deploy_job
 else
-    # The most common first step:
+    # The most common steps:
+    prepare_testing_branch
     initial_main_setup
 fi
 
