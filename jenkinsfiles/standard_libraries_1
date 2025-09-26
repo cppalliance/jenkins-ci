@@ -331,7 +331,7 @@ pipeline {
                     }
 
                     // Send the PR comment
-                    if (ALWAYS_NOTIFY == "true") || (NOTIFIED_BEFORE == "false") {
+                    if ( (ALWAYS_NOTIFY == "true") || (NOTIFIED_BEFORE == "false")) {
                         pullRequest.comment(commenttext)
                     }
 
