@@ -332,15 +332,15 @@ pipeline {
 
                     pullRequest.comment(commenttext)
 
-                 sh """#!/bin/bash
+                }
+
+                 sh '''#!/bin/bash
                  set -x
                  source jenkinsjobinfo.sh
                  env
                  echo "Attempting to record this PR"
                  echo "${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent" >> /jenkinsfilecache/pr_notification_list
-                 """
-
-                }
+                 '''
 
             }
         }
