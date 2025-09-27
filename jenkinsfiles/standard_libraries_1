@@ -321,7 +321,7 @@ pipeline {
                     commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html)"
                         }
                     else {
-                    commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html)\n\nIf more commits are pushed to the pull request, the docs will rebuild in the background. Use this same link to view the previews."
+                    commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html)\n\nIf more commits are pushed to the pull request, the docs will rebuild in the background (at the same URL)."
                     }
 
                     // Per-repo customizations
