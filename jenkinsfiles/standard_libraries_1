@@ -47,7 +47,7 @@ pipeline {
                 echo "export REPONAME=${REPONAME}" >> jenkinsjobinfo.sh
                 echo "export DNSREPONAME=${DNSREPONAME}" >> jenkinsjobinfo.sh
                 echo "export ORGANIZATION=${ORGANIZATION}" >> jenkinsjobinfo.sh
-                echo "export ONLY_BUILD_ON_DOCS_MODIFICATION=true" >> jenkinsjobinfo.sh
+                echo "export ONLY_BUILD_ON_DOCS_MODIFICATION=false" >> jenkinsjobinfo.sh
                 echo "export PATH_TO_DOCS=libs/${REPONAME}/doc" >> jenkinsjobinfo.sh
                 echo "export SUBPATH_TO_DOCS=/html" >> jenkinsjobinfo.sh
                 echo "export ALWAYS_NOTIFY=true" >> jenkinsjobinfo.sh
