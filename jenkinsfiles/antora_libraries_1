@@ -376,10 +376,16 @@ pipeline {
                  sh '''#!/bin/bash
                  set -x
                  source jenkinsjobinfo.sh
+                 COMMENT_ID=$(curl -L -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/$ORGANIZATION/$REPONAME/pulls/${CHANGE_ID} | jq '.[] | select(.body|test("An automated preview of the documentation")) | .id' | tail -n 1)
+                 re='^[0-9]+$'
+                 if ! [[ $COMMENT_ID =~ $re ]] ; then
+                    echo "error: COMMENT_ID is not a number"
+                    COMMENT_ID="unset"
+                 fi
                  if grep ${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent /jenkinsfilecache/pr_notification_list; then
                      echo "Already noted"
                  else
-                     echo "${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent" >> /jenkinsfilecache/pr_notification_list
+                     echo "${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent-${COMMENT_ID}" >> /jenkinsfilecache/pr_notification_list
                  fi
                  '''
 
