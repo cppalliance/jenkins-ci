@@ -360,13 +360,11 @@ pipeline {
                   script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; if grep ${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent /jenkinsfilecache/pr_notification_list ; then echo -n true; else echo -n false; fi'
 +                 )}"""
 
-                    if (ALWAYS_NOTIFY == "true") {
                         commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html)"
+
+                    if (ALWAYS_NOTIFY == "false") {
+                        commenttext = commenttext + "\n\nIf more commits are pushed to the pull request, the docs will rebuild at the same URL."
                     }
-                    else {
-                        commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html)\n\nIf more commits are pushed to the pull request, the docs will rebuild at the same URL."
-"
-}
 
                     // Send the PR comment
                     if ( (ALWAYS_NOTIFY == "true") || (NOTIFIED_BEFORE == "false")) {
