@@ -457,7 +457,7 @@ pipeline {
                     // Update the PR comment
                     if ( (ALWAYS_NOTIFY == "false") && (NOTIFIED_BEFORE == "true")) {
                         echo "Editing a comment"
-                        int COMMENT_ID_INT = "$COMMENT_ID" as Integer 
+                        long COMMENT_ID_INT = "$COMMENT_ID" as Long
                         pullRequest.editComment(COMMENT_ID_INT, commenttext)
                     }
                  }
