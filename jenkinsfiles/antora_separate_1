@@ -429,12 +429,19 @@ pipeline {
 
                     // Send the PR comment
                     if ( (ALWAYS_NOTIFY == "true") || (NOTIFIED_BEFORE == "false")) {
+                        echo "Posting a comment for the first time"
                         pullRequest.comment(commenttext)
                     }
                     // Update the PR comment
                     if ( (ALWAYS_NOTIFY == "false") && (NOTIFIED_BEFORE == "true")) {
+                        echo "Editing a comment"
                         pullRequest.editComment(COMMENT_ID, commenttext)
                     }
+
+                    echo "Debug info: ALWAYS_NOTIFY ${ALWAYS_NOTIFY} NOTIFIED_BEFORE ${NOTIFIED_BEFORE} COMMENT_ID ${COMMENT_ID}"
+                    echo "comment content:"
+                    echo "${commenttext}"
+
                  }
 
                  sh '''#!/bin/bash
