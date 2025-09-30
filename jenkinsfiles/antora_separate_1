@@ -49,7 +49,7 @@ pipeline {
                 echo "export ORGANIZATION=${ORGANIZATION}" >> jenkinsjobinfo.sh
                 echo "export ONLY_BUILD_ON_DOCS_MODIFICATION=false" >> jenkinsjobinfo.sh
                 echo "export PATH_TO_DOCS=libs/${REPONAME}/doc" >> jenkinsjobinfo.sh
-                echo "export ALWAYS_NOTIFY=false" >> jenkinsjobinfo.sh
+                echo "export ALWAYS_NOTIFY=true" >> jenkinsjobinfo.sh
                 '''
             }
         }
@@ -430,20 +430,28 @@ pipeline {
                         commenttext = commenttext + "\n\nDiff2html diff: [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/diff.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/diff.html)"
                     }
 
+                    echo "Debug info: ALWAYS_NOTIFY ${ALWAYS_NOTIFY} NOTIFIED_BEFORE ${NOTIFIED_BEFORE} COMMENT_ID ${COMMENT_ID}"
+                    echo "comment content:"
+                    echo "${commenttext}"
+
                     // Send the PR comment
                     if ( (ALWAYS_NOTIFY == "true") || (NOTIFIED_BEFORE == "false")) {
                         echo "Posting a comment for the first time"
-                        pullRequest.comment(commenttext)
+                        def mycomment = pullRequest.comment(commenttext)
+                        echo "mycomment is ${mycomment}"
+                        echo "mycomment.id is:"
+                        echo mycomment.id
+                        echo "Attempting to modify the comment"
+                        def newcommenttext = "Testing"
+                        pullRequest.editComment(mycomment.id, newcommenttext)
+                        
                     }
                     // Update the PR comment
                     if ( (ALWAYS_NOTIFY == "false") && (NOTIFIED_BEFORE == "true")) {
                         echo "Editing a comment"
+                        // this was failing. let's see.
                         pullRequest.editComment(COMMENT_ID, commenttext)
                     }
-
-                    echo "Debug info: ALWAYS_NOTIFY ${ALWAYS_NOTIFY} NOTIFIED_BEFORE ${NOTIFIED_BEFORE} COMMENT_ID ${COMMENT_ID}"
-                    echo "comment content:"
-                    echo "${commenttext}"
 
                  }
 
