@@ -411,7 +411,7 @@ pipeline {
                  if (NOTIFIED_BEFORE == "true") {
                      COMMENT_ID = """${sh(
                      returnStdout: true,
-                     script: '#!/bin/bash \n source jenkinsjobinfo.sh; detected_id=$(grep ${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent /jenkinsfilecache/pr_notification_list | sed -nE 's/^.*-.*-.*-.*-(.*)$/\1/p'); echo -n ${detected_id} '
+                     script: '#!/bin/bash \n source jenkinsjobinfo.sh; detected_id=$(grep ${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent /jenkinsfilecache/pr_notification_list | sed -nE "s/^.*-.*-.*-.*-(.*)$/\1/p"); echo -n ${detected_id} '
                  )}"""
 
                  }
