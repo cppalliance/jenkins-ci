@@ -400,7 +400,7 @@ pipeline {
 
                     def TIMESTAMP = """${sh(
                         returnStdout: true,
-                        script: '#!/bin/bash \n' + 'date -u +"%Y-%m-%d-%H-%M-%S"'
+                        script: '#!/bin/bash \n' + 'date -u +"%Y-%m-%d %H:%M:%S UTC"'
                     )}"""
 
                     def NOTIFIED_BEFORE = """${sh(
