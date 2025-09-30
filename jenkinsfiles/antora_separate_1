@@ -398,28 +398,31 @@ pipeline {
                 }
                 script {
 
-                  TIMESTAMP = """${sh(
+                  def TIMESTAMP = """${sh(
                   returnStdout: true,
                   script: '#!/bin/bash \n' + 'date -u +"%Y-%m-%d-%H-%M-%S"'
                  )}"""
 
-                  NOTIFIED_BEFORE = """${sh(
+                  def NOTIFIED_BEFORE = """${sh(
                   returnStdout: true,
                   script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; if grep ${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent /jenkinsfilecache/pr_notification_list ; then echo -n true; else echo -n false; fi'
                  )}"""
 
+                 def COMMENT_ID = "unknown"
+
                  if (NOTIFIED_BEFORE == "true") {
+                     echo "Detecting COMMENT_ID from pr_notification_list"
                      COMMENT_ID = """${sh(
                      returnStdout: true,
                      script: '#!/bin/bash \n source jenkinsjobinfo.sh; detected_id=$(grep ${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent /jenkinsfilecache/pr_notification_list | sed -nE "s/^.*-.*-.*-.*-(.*)$/\1/p"); echo -n ${detected_id} '
                  )}"""
 
                  }
-                        commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html)"
+                 def commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html)"
 
-                    if (ALWAYS_NOTIFY == "false") { 
+                 if (ALWAYS_NOTIFY == "false") { 
                         commenttext = commenttext + "\n\nIf more commits are pushed to the pull request, the docs will rebuild at the same URL.\n\n${TIMESTAMP}"
-                    }
+                 }
 
                     // Per-repo customizations
 
