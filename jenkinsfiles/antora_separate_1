@@ -439,11 +439,13 @@ pipeline {
                         echo "Posting a comment for the first time"
                         def mycomment = pullRequest.comment(commenttext)
                         echo "mycomment is ${mycomment}"
+                        def teststring = mycomment.id
                         echo "mycomment.id is:"
-                        echo mycomment.id
+                        echo "${teststring}"
                         echo "Attempting to modify the comment"
                         def newcommenttext = "Testing"
                         pullRequest.editComment(mycomment.id, newcommenttext)
+                        // will want to try: int value = "99".toInteger()
                         
                     }
                     // Update the PR comment
