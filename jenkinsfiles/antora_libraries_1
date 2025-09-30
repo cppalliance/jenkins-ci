@@ -51,7 +51,7 @@ pipeline {
                 echo "export ORGANIZATION=${ORGANIZATION}" >> jenkinsjobinfo.sh
                 echo "export ONLY_BUILD_ON_DOCS_MODIFICATION=false" >> jenkinsjobinfo.sh
                 echo "export PATH_TO_DOCS=doc/build/site" >> jenkinsjobinfo.sh
-                echo "export ALWAYS_NOTIFY=true" >> jenkinsjobinfo.sh
+                echo "export ALWAYS_NOTIFY=false" >> jenkinsjobinfo.sh
                 '''
             }
         }
@@ -355,38 +355,71 @@ pipeline {
                 }
                 script {
 
-                  NOTIFIED_BEFORE = """${sh(
-                  returnStdout: true,
-                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; if grep ${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent /jenkinsfilecache/pr_notification_list ; then echo -n true; else echo -n false; fi'
-                 )}"""
+                    def TIMESTAMP = """${sh(
+                        returnStdout: true,
+                        script: '#!/bin/bash \n' + 'date -u +"%Y-%m-%d %H:%M:%S UTC"'
+                    )}"""
 
-                        commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html)"
+                    def NOTIFIED_BEFORE = """${sh(
+                        returnStdout: true,
+                        script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; if grep -q ${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent /jenkinsfilecache/pr_notification_list ; then echo -n true; else echo -n false; fi'
+                     )}"""
+
+                    def COMMENT_ID = "unknown"
+
+                    if (NOTIFIED_BEFORE == "true") {
+                         echo "Detecting COMMENT_ID from pr_notification_list"
+                         COMMENT_ID = """${sh(
+                         returnStdout: true,
+                         script: '#!/bin/bash \n source jenkinsjobinfo.sh; grep ${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent /jenkinsfilecache/pr_notification_list | tail -n 1 | sed -nE "s/^.*%.*%.*%.*%(.*)/\\1/p"'
+                     )}"""
+                     }
+
+                    commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html)"
 
                     if (ALWAYS_NOTIFY == "false") {
-                        commenttext = commenttext + "\n\nIf more commits are pushed to the pull request, the docs will rebuild at the same URL."
+                        commenttext = commenttext + "\n\nIf more commits are pushed to the pull request, the docs will rebuild at the same URL.\n\n${TIMESTAMP}"
                     }
+
+                    echo "Debug info: ALWAYS_NOTIFY ${ALWAYS_NOTIFY} NOTIFIED_BEFORE ${NOTIFIED_BEFORE} COMMENT_ID ${COMMENT_ID}"
+                    echo "comment content:"
+                    echo "${commenttext}"
 
                     // Send the PR comment
                     if ( (ALWAYS_NOTIFY == "true") || (NOTIFIED_BEFORE == "false")) {
-                        pullRequest.comment(commenttext)
+                        echo "Posting a comment for the first time"
+                        def mycomment = pullRequest.comment(commenttext)
+                        echo "mycomment is ${mycomment}"
+                        def teststring = mycomment.id
+                        echo "mycomment.id is:"
+                        echo "${teststring}"
                     }
+
+                    // Update the PR comment
+                    if ( (ALWAYS_NOTIFY == "false") && (NOTIFIED_BEFORE == "true")) {
+                        echo "Editing a comment"
+                        long COMMENT_ID_INT = "$COMMENT_ID" as Long
+                        pullRequest.editComment(COMMENT_ID_INT, commenttext)
+                    }
+
 
                 }
 
-                 sh '''#!/bin/bash
-                 set -x
-                 source jenkinsjobinfo.sh
-                 if grep ${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent /jenkinsfilecache/pr_notification_list; then
-                     echo "Already noted"
-                 else
+                  sh '''#!/bin/bash
+                  set -x
+                  source jenkinsjobinfo.sh
+                  if grep -q ${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent /jenkinsfilecache/pr_notification_list; then
+                      echo "Already noted"
+                  else
                      COMMENT_ID=$(curl -L -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/$ORGANIZATION/$REPONAME/issues/${CHANGE_ID}/comments | jq '.[] | select(.body|test("An automated preview of the documentation")) | .id' | tail -n 1)
                      re='^[0-9]+$'
                      if ! [[ $COMMENT_ID =~ $re ]] ; then
                         echo "error: COMMENT_ID is not a number"
                         COMMENT_ID="unset"
                      fi
-                     echo "${ORGANIZATION}-${REPONAME}-${CHANGE_ID}-sent-${COMMENT_ID}" >> /jenkinsfilecache/pr_notification_list
-                 fi
+                     echo "${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent%${COMMENT_ID}" >> /jenkinsfilecache/pr_notification_list
+                  fi
+                  '''
 
             }
         }
