@@ -365,6 +365,12 @@ pipeline {
                         long COMMENT_ID_INT = "$COMMENT_ID" as Long
                         pullRequest.editComment(COMMENT_ID_INT, commenttext)
                     }
+
+                    def readContent = readFile 'jenkinsjobinfo.sh'
+                    writeFile file: 'jenkinsjobinfo.sh', text: readContent+"export COMMENT_ID=${COMMENT_ID}"
+                    def readContent2 = readFile 'jenkinsjobinfo.sh'
+                    echo "${readContent2}"
+
                   }
 
                   sh '''#!/bin/bash
