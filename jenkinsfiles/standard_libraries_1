@@ -368,8 +368,6 @@ pipeline {
 
                     def readContent = readFile 'jenkinsjobinfo.sh'
                     writeFile file: 'jenkinsjobinfo.sh', text: readContent+"export COMMENT_ID=${COMMENT_ID}"
-                    def readContent2 = readFile 'jenkinsjobinfo.sh'
-                    echo "${readContent2}"
 
                   }
 
