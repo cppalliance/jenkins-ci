@@ -333,7 +333,7 @@ pipeline {
                      )}"""
                      }
 
-                    commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html)"
+                    def commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html)"
 
                     if (ALWAYS_NOTIFY == "false") { 
                         commenttext = commenttext + "\n\nIf more commits are pushed to the pull request, the docs will rebuild at the same URL.\n\n${TIMESTAMP}"
@@ -354,9 +354,9 @@ pipeline {
                         echo "Posting a comment for the first time"
                         def mycomment = pullRequest.comment(commenttext)
                         echo "mycomment is ${mycomment}"
-                        def teststring = mycomment.id
-                        echo "mycomment.id is:"
-                        echo "${teststring}"
+                        COMMENT_ID = mycomment.id
+                        echo "New COMMENT_ID from a new comment is:"
+                        echo "${COMMENT_ID}"
                      }
  
                     // Update the PR comment
@@ -373,12 +373,7 @@ pipeline {
                   if grep -q ${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent /jenkinsfilecache/pr_notification_list; then
                       echo "Already noted"
                   else
-                     COMMENT_ID=$(curl -L -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/$ORGANIZATION/$REPONAME/issues/${CHANGE_ID}/comments | jq '.[] | select(.body|test("An automated preview of the documentation")) | .id' | tail -n 1)
-                     re='^[0-9]+$'
-                     if ! [[ $COMMENT_ID =~ $re ]] ; then
-                        echo "error: COMMENT_ID is not a number"
-                        COMMENT_ID="unset"
-                     fi
+                     # COMMENT_ID should already be known by now.
                      echo "${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent%${COMMENT_ID}" >> /jenkinsfilecache/pr_notification_list
                   fi
                   '''
