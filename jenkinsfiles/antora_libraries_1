@@ -390,9 +390,9 @@ pipeline {
                         echo "Posting a comment for the first time"
                         def mycomment = pullRequest.comment(commenttext)
                         echo "mycomment is ${mycomment}"
-                        def teststring = mycomment.id
-                        echo "mycomment.id is:"
-                        echo "${teststring}"
+                        COMMENT_ID = mycomment.id
+                        echo "New COMMENT_ID from a new comment is:"
+                        echo "${COMMENT_ID}"
                     }
 
                     // Update the PR comment
@@ -402,6 +402,8 @@ pipeline {
                         pullRequest.editComment(COMMENT_ID_INT, commenttext)
                     }
 
+                    def readContent = readFile 'jenkinsjobinfo.sh'
+                    writeFile file: 'jenkinsjobinfo.sh', text: readContent+"export COMMENT_ID=${COMMENT_ID}"
 
                 }
 
@@ -411,12 +413,6 @@ pipeline {
                   if grep -q ${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent /jenkinsfilecache/pr_notification_list; then
                       echo "Already noted"
                   else
-                     COMMENT_ID=$(curl -L -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/$ORGANIZATION/$REPONAME/issues/${CHANGE_ID}/comments | jq '.[] | select(.body|test("An automated preview of the documentation")) | .id' | tail -n 1)
-                     re='^[0-9]+$'
-                     if ! [[ $COMMENT_ID =~ $re ]] ; then
-                        echo "error: COMMENT_ID is not a number"
-                        COMMENT_ID="unset"
-                     fi
                      echo "${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent%${COMMENT_ID}" >> /jenkinsfilecache/pr_notification_list
                   fi
                   '''

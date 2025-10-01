@@ -250,7 +250,7 @@ EOL
 
                 script {
 
-                    commenttext = "![pullrequest](https://benchmark.cppalliance.org/jsonbenchmarks-pullrequests/${env.CHANGE_ID}/${env.PNGNAME})\n Benchmark test results. More info at [https://benchmark.cppalliance.org/jsonbenchmarks-pullrequests/${env.CHANGE_ID}/pullrequest.html](https://benchmark.cppalliance.org/jsonbenchmarks-pullrequests/${env.CHANGE_ID}/pullrequest.html)"
+                    def commenttext = "![pullrequest](https://benchmark.cppalliance.org/jsonbenchmarks-pullrequests/${env.CHANGE_ID}/${env.PNGNAME})\n Benchmark test results. More info at [https://benchmark.cppalliance.org/jsonbenchmarks-pullrequests/${env.CHANGE_ID}/pullrequest.html](https://benchmark.cppalliance.org/jsonbenchmarks-pullrequests/${env.CHANGE_ID}/pullrequest.html)"
 
                     pullRequest.comment(commenttext)
 

@@ -189,7 +189,7 @@ pipeline {
                 }
                 script {
 
-                    commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org)"
+                    def commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org)"
 
                     pullRequest.comment(commenttext)
 

@@ -377,7 +377,6 @@ pipeline {
                   if grep -q ${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent /jenkinsfilecache/pr_notification_list; then
                       echo "Already noted"
                   else
-                     # COMMENT_ID should already be known by now.
                      echo "${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent%${COMMENT_ID}" >> /jenkinsfilecache/pr_notification_list
                   fi
                   '''

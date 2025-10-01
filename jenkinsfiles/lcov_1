@@ -281,7 +281,7 @@ pipeline {
                 }
                 script {
 
-                    commenttext = "GCOVR code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html)\nLCOV code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html)\nCoverage Diff [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt)" 
+                    def commenttext = "GCOVR code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html)\nLCOV code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html)\nCoverage Diff [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt)" 
 
                     pullRequest.comment(commenttext)
 
