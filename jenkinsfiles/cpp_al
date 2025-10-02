@@ -1,5 +1,4 @@
 pipeline {
-
     // agent {
     //     node {
     //         label 'jenkinspool1'
@@ -8,11 +7,11 @@ pipeline {
 
     agent {
         docker {
-          // image 'circleci/ruby:2.4-node-browsers-legacy'
-          // image 'cppalliance/boost_superproject_build:24.04-v3'
-          image 'cppalliance/ruby2.4:1'
-          // label 'jenkinspool1'
-          }
+            // image 'circleci/ruby:2.4-node-browsers-legacy'
+            // image 'cppalliance/boost_superproject_build:24.04-v3'
+            image 'cppalliance/ruby2.4:1'
+        // label 'jenkinspool1'
+        }
     }
 
     stages {
@@ -76,12 +75,12 @@ pipeline {
 
         stage('Prebuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -93,14 +92,14 @@ pipeline {
                 fi
                 '''
             }
-         }
+        }
 
         // To skip this step, and actually all steps, adjust the job's Filter regex in the Jenkins UI
         // (develop|master|PR-.*) will build all branches
         // (PR-.*) will build pull requests. Etc.
         stage('Build docs') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
@@ -132,17 +131,17 @@ pipeline {
                 bundle exec jekyll build
 
                 '''
-                }
             }
+        }
 
         stage('Postbuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -155,44 +154,39 @@ pipeline {
                 fi
                 '''
             }
-         }
+        }
 
         stage('Pull requests: Upload to S3') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
             }
 
             environment {
                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-                 REPONAME = """${sh(
+                REPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${REPONAME}"'
              )}"""
-                 DNSREPONAME = """${sh(
+                DNSREPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DNSREPONAME}"'
              )}"""
-                 PRTEST = """${sh(
+                PRTEST = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PRTEST}"'
              )}"""
-
             }
 
             steps {
                 withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
-
-                    s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/",  workingDir: "_site" , includePathPattern:"**")
-
+                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/",  workingDir: '_site' , includePathPattern:'**')
                 }
                 script {
-
                     def commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org)"
 
                     pullRequest.comment(commenttext)
-
                 }
             }
         }
@@ -210,7 +204,7 @@ pipeline {
                 PREVIEWDATA="{\\"text\\":\\"$PREVIEWMESSAGE\\"}"
                 curl -X POST -H 'Content-type: application/json' --data "$PREVIEWDATA" ${CPPAL_SLACK_WEBHOOK}
                 '''
-             }
+            }
         }
 
         stage('Post Diagnostics') {
@@ -233,7 +227,6 @@ pipeline {
                 '''
             }
         }
-
     }
 
     post {
@@ -245,30 +238,29 @@ pipeline {
             }
             success {
                 echo 'This will run only if successful'
-                // no email on success
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on success
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
             failure {
                 echo 'This will run only if failure'
                 script {
-                    if (env.PRSTATE == "closed") {
+                    if (env.PRSTATE == 'closed') {
                         echo 'No email about a closed PR.'
                     }
                     else {
-                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
                     }
                 }
             }
             unstable {
                 echo 'This will run only if the run was marked as unstable'
-                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
             }
             changed {
                 echo 'This will run only if the state of the Pipeline has changed'
                 echo 'For example, if the Pipeline was previously failing but is now successful'
-                // no email on changed status
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on changed status
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
-      }
-
+    }
 }

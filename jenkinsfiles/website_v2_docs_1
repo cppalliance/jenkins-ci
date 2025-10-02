@@ -1,5 +1,4 @@
 pipeline {
-
     // agent {
     //     node {
     //         label 'jenkinspool1'
@@ -8,18 +7,18 @@ pipeline {
 
     agent {
         docker {
-          image 'cppalliance/boost_superproject_build:24.04-v3'
-          // label 'jenkinspool1'
-          }
+            image 'cppalliance/boost_superproject_build:24.04-v3'
+        // label 'jenkinspool1'
+        }
     }
 
     stages {
         stage('Preclean Workspace') {
             steps {
-                sh """#!/bin/bash
+                sh '''#!/bin/bash
                 set -xe
                 rm -rf * .*
-                """
+                '''
                 checkout scm
             }
         }
@@ -76,12 +75,12 @@ pipeline {
 
         stage('Prebuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -93,14 +92,14 @@ pipeline {
                 fi
                 '''
             }
-         }
+        }
 
         // To skip this step, and actually all steps, adjust the job's Filter regex in the Jenkins UI
         // (develop|master|PR-.*) will build all branches
         // (PR-.*) will build pull requests. Etc.
         stage('Build docs') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
@@ -130,23 +129,22 @@ pipeline {
                 export pythonvirtenvpath=/opt/venvboostdocs
                 if [ -f ${pythonvirtenvpath}/bin/activate ]; then
                     source ${pythonvirtenvpath}/bin/activate
-                fi 
+                fi
 
                 echo "env"
                 env
-                
+
                 echo "pwd"
                 pwd
-                
+
                 echo "home is $HOME"
-                
+
                 echo "ls -al HOME"
                 ls -al $HOME
-                
+
                 echo "ls ~/"
                 ls -al ~/
-                
-               
+
                 mkdir -p ~/.nvm_${REPONAME}_antora
                 export NODE_VERSION=18.18.1
                 # The container has a pre-installed nodejs. Overwrite those again.
@@ -165,24 +163,24 @@ pipeline {
                 npm install @mermaid-js/mermaid-cli@10.5.1
 
                 npm ci
-                
+
                 ./build.sh ${CHANGE_TARGET}
-                
+
                 rm build/index.html || true
                 curl -f -o build/index.html https://raw.githubusercontent.com/${JENKINS_CI_REPO}/${JENKINS_CI_REPO_BRANCH}/scripts/${ORGANIZATION}_${REPONAME}_index.html
                 cat  build/index.html
                 '''
-                }
             }
+        }
 
         stage('Postbuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -195,11 +193,11 @@ pipeline {
                 fi
                 '''
             }
-         }
+        }
 
         stage('Main branches: Upload to S3') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                 }
@@ -207,70 +205,63 @@ pipeline {
 
             environment {
                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-                 REPONAME = """${sh(
+                REPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${REPONAME}"'
              )}"""
-                 DNSREPONAME = """${sh(
+                DNSREPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DNSREPONAME}"'
              )}"""
             }
 
             steps {
-
                 withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
                     sh '''#!/bin/bash
                         set -xe
                         aws s3 rm --recursive s3://cppalliance-websites/${BRANCH_NAME}.${DNSREPONAME}.cpp.al/
                     '''
-                    s3Upload(bucket:"cppalliance-websites", path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al", workingDir: "build", includePathPattern:"**")
+                    s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al", workingDir: 'build', includePathPattern:'**')
                 }
             }
         }
 
-
         stage('Pull requests: Upload to S3') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
             }
 
             environment {
                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-                 REPONAME = """${sh(
+                REPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${REPONAME}"'
              )}"""
-                 DNSREPONAME = """${sh(
+                DNSREPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DNSREPONAME}"'
              )}"""
-                 PRTEST = """${sh(
+                PRTEST = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PRTEST}"'
              )}"""
-
             }
 
             steps {
                 withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
-
                     sh '''#!/bin/bash
                         set -xe
                         aws s3 rm --recursive s3://cppalliance-previews/${DNSREPONAME}/${CHANGE_ID}/
                     '''
 
-                    s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/",  workingDir: "build" , includePathPattern:"**")
-
+                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/",  workingDir: 'build' , includePathPattern:'**')
                 }
                 script {
-
                     commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/index.html)"
 
                     pullRequest.comment(commenttext)
-
                 }
             }
         }
@@ -295,7 +286,6 @@ pipeline {
                 '''
             }
         }
-
     }
 
     post {
@@ -307,30 +297,29 @@ pipeline {
             }
             success {
                 echo 'This will run only if successful'
-                // no email on success
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on success
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
             failure {
                 echo 'This will run only if failure'
                 script {
-                    if (env.PRSTATE == "closed") {
+                    if (env.PRSTATE == 'closed') {
                         echo 'No email about a closed PR.'
                     }
                     else {
-                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
                     }
                 }
             }
             unstable {
                 echo 'This will run only if the run was marked as unstable'
-                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
             }
             changed {
                 echo 'This will run only if the state of the Pipeline has changed'
                 echo 'For example, if the Pipeline was previously failing but is now successful'
-                // no email on changed status
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on changed status
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
-      }
-
+    }
 }

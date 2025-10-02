@@ -1,10 +1,9 @@
 pipeline {
-
     agent {
         node {
-             label 'jenkinspool1'
-         }
-     }
+            label 'jenkinspool1'
+        }
+    }
 
     //agent {
     //    docker {
@@ -86,12 +85,12 @@ pipeline {
 
         stage('Prebuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -103,14 +102,14 @@ pipeline {
                 fi
                 '''
             }
-         }
+        }
 
         stage('Check if docs were modified') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -142,37 +141,37 @@ pipeline {
                  fi
                 '''
             }
-         }
+        }
 
         stage('Determine if the job should exit') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
             }
-             environment {
-                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-                  AUTOCANCEL = """${sh(
+            environment {
+                // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
+                AUTOCANCEL = """${sh(
                   returnStdout: true,
                   script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${AUTOCANCEL}"'
               )}"""
-             }
-              steps {
-                  script {
-                      if (env.AUTOCANCEL == "true") {
-                         currentBuild.result = 'ABORTED'
-                         error("Aborting the build.")
-                       }
-                  }
-              }
-         }
+            }
+            steps {
+                script {
+                    if (env.AUTOCANCEL == 'true') {
+                        currentBuild.result = 'ABORTED'
+                        error('Aborting the build.')
+                    }
+                }
+            }
+        }
 
         // To skip this step, and actually all steps, adjust the job's Filter regex in the Jenkins UI
         // (develop|master|PR-.*) will build all branches
         // (PR-.*) will build pull requests. Etc.
         stage('Build docs') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
@@ -202,7 +201,7 @@ pipeline {
                 export pythonvirtenvpath=/opt/venv
                 if [ -f ${pythonvirtenvpath}/bin/activate ]; then
                     source ${pythonvirtenvpath}/bin/activate
-                fi 
+                fi
                 mkdir -p ~/.local/bin
                 GITHUB_REPO_URL="https://github.com/cppalliance/ci-automation/raw/master"
                 DIR="scripts"
@@ -212,20 +211,20 @@ pipeline {
                 if [ ! -f "$FILE" ]; then
                     curl -s -S --retry 10 -L -o $FILE $URL && chmod 755 $FILE
                 fi
-                
-                $FILE 
+
+                $FILE
                 '''
-                }
             }
+        }
 
         stage('Postbuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -238,53 +237,48 @@ pipeline {
                 fi
                 '''
             }
-         }
+        }
 
         stage('Pull requests: Upload to S3') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
             }
 
             environment {
                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-                 REPONAME = """${sh(
+                REPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${REPONAME}"'
              )}"""
-                 DNSREPONAME = """${sh(
+                DNSREPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DNSREPONAME}"'
              )}"""
-                 PRTEST = """${sh(
+                PRTEST = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PRTEST}"'
              )}"""
-                 PATH_TO_DOCS = """${sh(
+                PATH_TO_DOCS = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PATH_TO_DOCS}"'
              )}"""
-                 DIFF2HTML = """${sh(
+                DIFF2HTML = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DIFF2HTML}"'
              )}"""
-
             }
 
             steps {
                 withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
-
-                    s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/genhtml/",  workingDir: "genhtml" , includePathPattern:"**")
-                    s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/gcovr/",  workingDir: "gcovr" , includePathPattern:"**")
-
+                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/genhtml/",  workingDir: 'genhtml' , includePathPattern:'**')
+                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/gcovr/",  workingDir: 'gcovr' , includePathPattern:'**')
                 }
                 script {
-
-                    def commenttext = "GCOVR code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html)\nLCOV code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html)\nCoverage Diff [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt)" 
+                    def commenttext = "GCOVR code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html)\nLCOV code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html)\nCoverage Diff [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/coverage_diff.txt)"
 
                     pullRequest.comment(commenttext)
-
                 }
             }
         }
@@ -320,29 +314,29 @@ pipeline {
             }
             success {
                 echo 'This will run only if successful'
-                // no email on success
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on success
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
             failure {
                 echo 'This will run only if failure'
                 script {
-                    if (env.PRSTATE == "closed") {
+                    if (env.PRSTATE == 'closed') {
                         echo 'No email about a closed PR.'
                     }
                     else {
-                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
                     }
                 }
             }
             unstable {
                 echo 'This will run only if the run was marked as unstable'
-                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
             }
             changed {
                 echo 'This will run only if the state of the Pipeline has changed'
                 echo 'For example, if the Pipeline was previously failing but is now successful'
-                // no email on changed status
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on changed status
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
-      }
+    }
 }

@@ -1,5 +1,4 @@
 pipeline {
-
     agent {
         node {
             label 'khjson1'
@@ -16,10 +15,10 @@ pipeline {
     stages {
         stage('Preclean Workspace') {
             steps {
-                sh """#!/bin/bash
+                sh '''#!/bin/bash
                 set -xe
                 rm -rf * .*
-                """
+                '''
                 // checkout scm
                 checkout([
                            $class: 'GitSCM',
@@ -90,12 +89,12 @@ pipeline {
 
         stage('Prebuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -107,14 +106,14 @@ pipeline {
                 fi
                 '''
             }
-         }
+        }
 
         // To skip this step, and actually all steps, adjust the job's Filter regex in the Jenkins UI
         // (develop|master|PR-.*) will build all branches
         // (PR-.*) will build pull requests. Etc.
         stage('Run benchmarks') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
             }
@@ -205,17 +204,17 @@ EOL
                 ./runbenchmarks.py
 
                 '''
-                }
             }
+        }
 
         stage('Postbuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -228,32 +227,28 @@ EOL
                 fi
                 '''
             }
-         }
+        }
 
         stage('Pull requests: comment in PR') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
             }
 
             environment {
                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-                 PNGNAME = """${sh(
+                PNGNAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source Infrastructure-Docs/benchmarks/json/tmp/pngpropertiesfile; echo -n "${PNGNAME}"'
              )}"""
-
             }
 
             steps {
-
                 script {
-
                     def commenttext = "![pullrequest](https://benchmark.cppalliance.org/jsonbenchmarks-pullrequests/${env.CHANGE_ID}/${env.PNGNAME})\n Benchmark test results. More info at [https://benchmark.cppalliance.org/jsonbenchmarks-pullrequests/${env.CHANGE_ID}/pullrequest.html](https://benchmark.cppalliance.org/jsonbenchmarks-pullrequests/${env.CHANGE_ID}/pullrequest.html)"
 
                     pullRequest.comment(commenttext)
-
                 }
             }
         }
@@ -278,7 +273,6 @@ EOL
                 '''
             }
         }
-
     }
 
     post {
@@ -290,30 +284,29 @@ EOL
             }
             success {
                 echo 'This will run only if successful'
-                // no email on success
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on success
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
             failure {
                 echo 'This will run only if failure'
                 script {
-                    if (env.PRSTATE == "closed") {
+                    if (env.PRSTATE == 'closed') {
                         echo 'No email about a closed PR.'
                     }
                     else {
-                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
                     }
                 }
             }
             unstable {
                 echo 'This will run only if the run was marked as unstable'
-                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
             }
             changed {
                 echo 'This will run only if the state of the Pipeline has changed'
                 echo 'For example, if the Pipeline was previously failing but is now successful'
-                // no email on changed status
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on changed status
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
-      }
-
+    }
 }

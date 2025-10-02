@@ -1,5 +1,4 @@
 pipeline {
-
     // agent {
     //     node {
     //         label 'jenkinspool1'
@@ -8,19 +7,19 @@ pipeline {
 
     agent {
         docker {
-          image 'cppalliance/boost_superproject_build:24.04-v3'
-          args '-v /var/lib/jenkins/jenkinsfilecache:/jenkinsfilecache'
-          // label 'jenkinspool1'
-          }
+            image 'cppalliance/boost_superproject_build:24.04-v3'
+            args '-v /var/lib/jenkins/jenkinsfilecache:/jenkinsfilecache'
+        // label 'jenkinspool1'
+        }
     }
 
     stages {
         stage('Preclean Workspace') {
             steps {
-                sh """#!/bin/bash
+                sh '''#!/bin/bash
                 set -xe
                 rm -rf * .*
-                """
+                '''
                 checkout scm
             }
         }
@@ -78,12 +77,12 @@ pipeline {
 
         stage('Prebuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -95,14 +94,14 @@ pipeline {
                 fi
                 '''
             }
-         }
+        }
 
         stage('Check if docs were modified') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -134,37 +133,37 @@ pipeline {
                  fi
                 '''
             }
-         }
+        }
 
         stage('Determine if the job should exit') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
             }
-             environment {
-                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-                  AUTOCANCEL = """${sh(
+            environment {
+                // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
+                AUTOCANCEL = """${sh(
                   returnStdout: true,
                   script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${AUTOCANCEL}"'
               )}"""
-             }
-              steps {
-                  script {
-                      if (env.AUTOCANCEL == "true") {
-                         currentBuild.result = 'ABORTED'
-                         error("Aborting the build.")
-                       }
-                  }
-              }
-         }
+            }
+            steps {
+                script {
+                    if (env.AUTOCANCEL == 'true') {
+                        currentBuild.result = 'ABORTED'
+                        error('Aborting the build.')
+                    }
+                }
+            }
+        }
 
         // To skip this step, and actually all steps, adjust the job's Filter regex in the Jenkins UI
         // (develop|master|PR-.*) will build all branches
         // (PR-.*) will build pull requests. Etc.
         stage('Build docs') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
@@ -202,17 +201,17 @@ pipeline {
                     cp $sourcefile $destfile
                 fi
                 '''
-                }
             }
+        }
 
         stage('Postbuild script') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                     expression { env.CHANGE_ID != null }
                 }
-           }
+            }
             steps {
                 sh '''#!/bin/bash
                 set -xe
@@ -225,11 +224,11 @@ pipeline {
                 fi
                 '''
             }
-         }
+        }
 
         stage('Main branches: Upload to S3') {
             when {
-                anyOf{
+                anyOf {
                     branch 'develop'
                     branch 'master'
                 }
@@ -237,19 +236,19 @@ pipeline {
 
             environment {
                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-                 REPONAME = """${sh(
+                REPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${REPONAME}"'
              )}"""
-                 DNSREPONAME = """${sh(
+                DNSREPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DNSREPONAME}"'
              )}"""
-                 PATH_TO_DOCS = """${sh(
+                PATH_TO_DOCS = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PATH_TO_DOCS}"'
              )}"""
-                 SUBPATH_TO_DOCS = """${sh(
+                SUBPATH_TO_DOCS = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${SUBPATH_TO_DOCS}"'
              )}"""
@@ -257,62 +256,56 @@ pipeline {
 
             steps {
                 withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
-                    s3Upload(bucket:"cppalliance-websites", path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al", workingDir: "boost-root/${PATH_TO_DOCS}${SUBPATH_TO_DOCS}", includePathPattern:"**")
-                    // s3Upload(bucket:"cppalliance-websites", path:"${env.BRANCH_NAME}.${env.DNSREPONAME}.cpp.al", workingDir: "boost-root/${env.PATH_TO_DOCS}${env.SUBPATH_TO_DOCS}", includePathPattern:"**")
-
+                    s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al", workingDir: "boost-root/${PATH_TO_DOCS}${SUBPATH_TO_DOCS}", includePathPattern:'**')
+                // s3Upload(bucket:"cppalliance-websites", path:"${env.BRANCH_NAME}.${env.DNSREPONAME}.cpp.al", workingDir: "boost-root/${env.PATH_TO_DOCS}${env.SUBPATH_TO_DOCS}", includePathPattern:"**")
                 }
             }
         }
 
-
         stage('Pull requests: Upload to S3') {
             when {
-                anyOf{
+                anyOf {
                     expression { env.CHANGE_ID != null }
                 }
             }
 
             environment {
                 // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-                 REPONAME = """${sh(
+                REPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${REPONAME}"'
              )}"""
-                 DNSREPONAME = """${sh(
+                DNSREPONAME = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DNSREPONAME}"'
              )}"""
-                 PRTEST = """${sh(
+                PRTEST = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PRTEST}"'
              )}"""
-                 PATH_TO_DOCS = """${sh(
+                PATH_TO_DOCS = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PATH_TO_DOCS}"'
              )}"""
-                 DIFF2HTML = """${sh(
+                DIFF2HTML = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DIFF2HTML}"'
              )}"""
-                 ALWAYS_NOTIFY = """${sh(
+                ALWAYS_NOTIFY = """${sh(
                  returnStdout: true,
                  script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${ALWAYS_NOTIFY}"'
              )}"""
-
             }
 
             steps {
                 withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
-
                     // s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/doc/",  workingDir: "boost-root/doc" , includePathPattern:"**")
-                    s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/doc/src/",  workingDir: "boost-root/doc/src" , includePathPattern:"**")
-                    s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/${PATH_TO_DOCS}/", workingDir: "boost-root/${PATH_TO_DOCS}", includePathPattern:"**")
-                    s3Upload(bucket:"cppalliance-previews", path:"${DNSREPONAME}/${CHANGE_ID}/", workingDir: "boost-root", includePathPattern:"boost.png")
-
+                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/doc/src/",  workingDir: 'boost-root/doc/src' , includePathPattern:'**')
+                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/${PATH_TO_DOCS}/", workingDir: "boost-root/${PATH_TO_DOCS}", includePathPattern:'**')
+                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/", workingDir: 'boost-root', includePathPattern:'boost.png')
                 }
 
                 script {
-
                     def TIMESTAMP = """${sh(
                         returnStdout: true,
                         script: '#!/bin/bash \n' + 'date -u +"%Y-%m-%d %H:%M:%S UTC"'
@@ -323,55 +316,54 @@ pipeline {
                         script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; if grep -q ${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent /jenkinsfilecache/pr_notification_list ; then echo -n true; else echo -n false; fi'
                      )}"""
 
-                     def COMMENT_ID = "unknown"
+                    def COMMENT_ID = 'unknown'
 
-                     if (NOTIFIED_BEFORE == "true") {
-                         echo "Detecting COMMENT_ID from pr_notification_list"
-                         COMMENT_ID = """${sh(
+                    if (NOTIFIED_BEFORE == 'true') {
+                        echo 'Detecting COMMENT_ID from pr_notification_list'
+                        COMMENT_ID = """${sh(
                          returnStdout: true,
                          script: '#!/bin/bash \n source jenkinsjobinfo.sh; grep ${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent /jenkinsfilecache/pr_notification_list | tail -n 1 | sed -nE "s/^.*%.*%.*%.*%(.*)/\\1/p"'
                      )}"""
-                     }
+                    }
 
                     def commenttext = "An automated preview of the documentation is available at [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/index.html)"
 
-                    if (ALWAYS_NOTIFY == "false") { 
+                    if (ALWAYS_NOTIFY == 'false') {
                         commenttext = commenttext + "\n\nIf more commits are pushed to the pull request, the docs will rebuild at the same URL.\n\n${TIMESTAMP}"
                     }
 
                     // Per-repo customizations
 
-                    if ( (env.DIFF2HTML != null) && (env.DIFF2HTML == "true") ) {
+                    if ( (env.DIFF2HTML != null) && (env.DIFF2HTML == 'true') ) {
                         commenttext = commenttext + "\n\nDiff2html diff: [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/diff.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/${PATH_TO_DOCS}/html/diff.html)"
                     }
 
                     echo "Debug info: ALWAYS_NOTIFY ${ALWAYS_NOTIFY} NOTIFIED_BEFORE ${NOTIFIED_BEFORE} COMMENT_ID ${COMMENT_ID}"
-                    echo "comment content:"
+                    echo 'comment content:'
                     echo "${commenttext}"
 
-                     // Send the PR comment
-                     if ( (ALWAYS_NOTIFY == "true") || (NOTIFIED_BEFORE == "false")) {
-                        echo "Posting a comment for the first time"
+                    // Send the PR comment
+                    if ( (ALWAYS_NOTIFY == 'true') || (NOTIFIED_BEFORE == 'false')) {
+                        echo 'Posting a comment for the first time'
                         def mycomment = pullRequest.comment(commenttext)
                         echo "mycomment is ${mycomment}"
                         COMMENT_ID = mycomment.id
-                        echo "New COMMENT_ID from a new comment is:"
+                        echo 'New COMMENT_ID from a new comment is:'
                         echo "${COMMENT_ID}"
-                     }
- 
+                    }
+
                     // Update the PR comment
-                    if ( (ALWAYS_NOTIFY == "false") && (NOTIFIED_BEFORE == "true")) {
-                        echo "Editing a comment"
+                    if ( (ALWAYS_NOTIFY == 'false') && (NOTIFIED_BEFORE == 'true')) {
+                        echo 'Editing a comment'
                         long COMMENT_ID_INT = "$COMMENT_ID" as Long
                         pullRequest.editComment(COMMENT_ID_INT, commenttext)
                     }
 
                     def readContent = readFile 'jenkinsjobinfo.sh'
-                    writeFile file: 'jenkinsjobinfo.sh', text: readContent+"export COMMENT_ID=${COMMENT_ID}"
+                    writeFile file: 'jenkinsjobinfo.sh', text: readContent + "export COMMENT_ID=${COMMENT_ID}"
+                }
 
-                  }
-
-                  sh '''#!/bin/bash
+                sh '''#!/bin/bash
                   set -x
                   source jenkinsjobinfo.sh
                   if grep -q ${ORGANIZATION}%${REPONAME}%${CHANGE_ID}%sent /jenkinsfilecache/pr_notification_list; then
@@ -403,7 +395,6 @@ pipeline {
                 '''
             }
         }
-
     }
 
     post {
@@ -415,30 +406,29 @@ pipeline {
             }
             success {
                 echo 'This will run only if successful'
-                // no email on success
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on success
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "SUCCESS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
             failure {
                 echo 'This will run only if failure'
                 script {
-                    if (env.PRSTATE == "closed") {
+                    if (env.PRSTATE == 'closed') {
                         echo 'No email about a closed PR.'
                     }
                     else {
-                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                        mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "ERROR CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
                     }
                 }
             }
             unstable {
                 echo 'This will run only if the run was marked as unstable'
-                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+                mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "UNSTABLE STATUS CI: Project name -> ${env.JOB_NAME}", to: 'jenkins@cppalliance.org'
             }
             changed {
                 echo 'This will run only if the state of the Pipeline has changed'
                 echo 'For example, if the Pipeline was previously failing but is now successful'
-                // no email on changed status
-                // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
+            // no email on changed status
+            // mail bcc: '', body: "<b>prstate: ${env.PRSTATE}</b><br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL of the build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "CHANGED STATUS CI: Project name -> ${env.JOB_NAME}", to: "jenkins@cppalliance.org";
             }
-      }
-
+    }
 }
