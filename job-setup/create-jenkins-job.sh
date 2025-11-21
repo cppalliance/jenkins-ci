@@ -8,7 +8,7 @@
 # (See accompanying file LICENSE_1_0.txt or copy at http://boost.org/LICENSE_1_0.txt)
 
 set -e
-# set -x
+set -x
 
 scriptname="create-jenkins-job.sh"
 scriptlocation=$(pwd)
@@ -168,7 +168,7 @@ function initial_main_setup {
 
         git add .
         git commit -m "testing pull request doc previews"
-        git push --set-upstream origin prtest
+        git push --set-upstream origin prtest --force
 
         # For security, let's put the URL back to normal
         git remote set-url origin "https://github.com/${github_test_org}/${repo_name}"
