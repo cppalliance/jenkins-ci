@@ -264,6 +264,16 @@ function prepare_testing_branch {
     previousdir=$(pwd)
     mkdir -p "$HOME/github/${github_test_org}"
     cd "$HOME/github/${github_test_org}"
+    if [ -d jenkins-ci ]; then
+        confirm=""
+        echo "To improve the chances of things working correctly, it's recommended to _remove_ the ${github_test_org}/jenkins-ci completely before continuing."
+        echo "However this risks losing work, if you haven't checked in all changes or branches."
+        echo "The deletion is not absolutely required."
+        read -r -p "Delete dir? (y/n): " confirm
+        if [[ $confirm == [yY] ]]; then
+            rm -rf jenkins-ci
+        fi
+    fi
     if [ ! -d jenkins-ci ]; then
         git clone -b testing "https://github.com/${github_test_org}/jenkins-ci"
     fi
