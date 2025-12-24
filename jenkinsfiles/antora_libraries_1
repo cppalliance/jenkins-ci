@@ -250,6 +250,7 @@ pipeline {
                     EXTRA_BOOST_LIBRARIES="cppalliance/buffers cppalliance/http_proto"
                 fi
                 for EXTRA_LIB in ${EXTRA_BOOST_LIBRARIES}; do
+                    REFRESH_EXTRA_LIB="ok"
                     EXTRA_LIB_REPO=`basename $EXTRA_LIB`
                     if [ ! -d "$BOOST_ROOT/libs/${EXTRA_LIB_REPO}" ]; then
                         pushd $BOOST_ROOT/libs
@@ -258,8 +259,18 @@ pipeline {
                     else
                         # refresh extra lib:
                         pushd $BOOST_ROOT/libs/${EXTRA_LIB_REPO}
-                        git checkout $BOOST_BRANCH || true
-                        git pull || true
+                        if ! git checkout $BOOST_BRANCH; then
+                            REFRESH_EXTRA_LIB="failed"
+                        fi
+                        if ! git pull; then
+                            REFRESH_EXTRA_LIB="failed"
+                        fi
+                        popd
+                    fi
+                    if [ "$REFRESH_EXTRA_LIB" = "failed" ]; then
+                        pushd $BOOST_ROOT/libs
+                        rm -rf "${EXTRA_LIB_REPO}"
+                        git clone https://github.com/${EXTRA_LIB} -b $BOOST_BRANCH --depth 1
                         popd
                     fi
                 done
