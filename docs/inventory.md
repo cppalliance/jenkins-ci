@@ -15,8 +15,8 @@
 | crypt | https://github.com/cppalliance/crypt | standard_libraries_1 |
 | decimal | https://github.com/cppalliance/decimal | antora_separate_1 |
 | docca | https://github.com/boostorg/docca | standard_libraries_1 |
-| http_proto | https://github.com/cppalliance/http_proto | antora_libraries_1 |
-| http_proto_lcov | https://github.com/cppalliance/http_proto | lcov_1 |
+| http | https://github.com/cppalliance/http | antora_libraries_1 |
+| http_lcov | https://github.com/cppalliance/http | lcov_1 |
 | int128 | https://github.com/cppalliance/int128     | standard_libraries_1 |
 | json | https://github.com/boostorg/json | standard_libraries_1 |
 | json_benchmarks | https://github.com/boostorg/json | json_benchmarks_1 |

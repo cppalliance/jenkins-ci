@@ -5,7 +5,7 @@ It may be interesting to discuss some of the architectural ideas and design deci
 
 Each pull request is given its own URL, such as
 
-https://212.http-proto.prtest.cppalliance.org/http_proto/index.html
+https://212.http-proto.prtest.cppalliance.org/http/index.html
 
 Notice the format of the URL. The pull request number is 212. The repository is http-proto. The remainder is the top level domain name of the web server where it is hosted.
 

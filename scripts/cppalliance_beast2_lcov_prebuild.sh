@@ -12,5 +12,5 @@ echo "export PRTEST=prtest3" >> jenkinsjobinfo.sh
 echo "export CXX=/usr/bin/clang++-18" >> jenkinsjobinfo.sh
 echo "export CC=/usr/bin/clang-18" >> jenkinsjobinfo.sh
 # buffers may not be required
-echo "export EXTRA_BOOST_LIBRARIES='cppalliance/buffers cppalliance/http_proto cppalliance/capy'" >> jenkinsjobinfo.sh
+echo "export EXTRA_BOOST_LIBRARIES='cppalliance/buffers cppalliance/http cppalliance/capy'" >> jenkinsjobinfo.sh
 

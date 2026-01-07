@@ -269,9 +269,9 @@ pipeline {
                 git pull
                 git submodule update --init
                 FILECACHE_PATH=$(pwd)
-                # Formatted such as "cppalliance/buffers cppalliance/http_proto"
+                # Formatted such as "cppalliance/buffers cppalliance/http"
                 if [ -z "${EXTRA_BOOST_LIBRARIES}" ]; then
-                    EXTRA_BOOST_LIBRARIES="cppalliance/buffers cppalliance/http_proto"
+                    EXTRA_BOOST_LIBRARIES="cppalliance/buffers cppalliance/http"
                 fi
                 for EXTRA_LIB in ${EXTRA_BOOST_LIBRARIES}; do
                     REFRESH_EXTRA_LIB="ok"
