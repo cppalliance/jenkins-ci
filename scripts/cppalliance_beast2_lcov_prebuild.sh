@@ -13,4 +13,4 @@ echo "export CXX=/usr/bin/clang++-18" >> jenkinsjobinfo.sh
 echo "export CC=/usr/bin/clang-18" >> jenkinsjobinfo.sh
 # buffers may not be required
 echo "export EXTRA_BOOST_LIBRARIES='cppalliance/buffers cppalliance/capy cppalliance/corosio cppalliance/http'" >> jenkinsjobinfo.sh
-
+echo "export B2_CXXSTD=20" >> jenkinsjobinfo.sh
