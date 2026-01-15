@@ -1,0 +1,61 @@
+server {
+    # Listen on port 80 for all IPs associated with your machine
+    listen 80;
+
+    # variables don't always work as expected in nginx configs. Set values statically.
+    set $website _website_name_;
+    server_name _website_name_;
+
+    #location / {
+    #    # This code rewrites the original request
+    #    # E.g. if someone requests
+    #    # /directory/file.ext?param=value
+    #    # from the coolsite.com site the request is rewritten to
+    #    # /coolsite.com/directory/file.ext?param=value
+    #    set $backendserver 'http://cppalliance-websites.s3-website-us-east-1.amazonaws.com';
+    #    # echo "$backendserver";
+
+    #    #FINAL REWRITE
+    #    rewrite ^(.*)$ $backendserver/$website$1 break;
+
+
+    #    # The rewritten request is passed to S3
+    #    proxy_pass http://cppalliance-websites.s3-website-us-east-1.amazonaws.com;
+    #    #proxy_pass $backendserver;
+    #    include /etc/nginx/proxy_params;
+    #    proxy_redirect default;
+    #    #proxy_redirect /$website / ;
+    #}
+    location '/.well-known/acme-challenge' {
+        default_type "text/plain";
+        root /var/www/letsencrypt;
+        }
+    location / {
+         return 301 https://$website:443$request_uri;
+    }
+
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    set $website _website_name_;
+    ssl_certificate /etc/letsencrypt/live/develop.json.cpp.al/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/develop.json.cpp.al/privkey.pem;
+    server_name _website_name_;
+    location / {
+        set $backendserver 'http://cppalliance-websites.s3-website-us-east-1.amazonaws.com';
+        # echo "$backendserver";
+
+        #FINAL REWRITE
+        rewrite ^(.*)$ $backendserver/$website$1 break;
+
+        # The rewritten request is passed to S3
+        proxy_pass http://cppalliance-websites.s3-website-us-east-1.amazonaws.com;
+        #proxy_pass $backendserver;
+        include /etc/nginx/proxy_params;
+        proxy_redirect default;
+        #proxy_redirect /$website / ;
+
+}
+}

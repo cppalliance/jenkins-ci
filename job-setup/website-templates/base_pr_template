@@ -1,0 +1,94 @@
+server {
+    # Listen on port 80 for all IPs associated with your machine
+    listen 80;
+
+    # Catch all other server names
+    server_name _website_name_;
+
+    if ($host ~* ([0-9]+)\.(.*?)\.(.*)) {
+        set $pullrequest $1;
+        set $repo $2;
+    }
+
+    #location / {
+    #    # This code rewrites the original request
+    #    # E.g. if someone requests
+    #    # /directory/file.ext?param=value
+    #    # from the coolsite.com site the request is rewritten to
+    #    # /coolsite.com/directory/file.ext?param=value
+    #    set $backendserver 'http://cppalliance-previews.s3-website-us-east-1.amazonaws.com';
+    #    # echo "$backendserver";
+
+    #    #CUSTOMIZATIONS
+    #    #news customization
+    #    if ($repo = "cppalliance" ) {
+    #      rewrite ^(.*)/news$ $1/news.html ;
+    #      rewrite ^(.*)/people/([a-zA-Z0-9]+)$ $1/people/$2.html ;
+    #    }
+
+    #    #FINAL REWRITE
+    #    rewrite ^(.*)$ $backendserver/$repo/$pullrequest$1 break;
+
+
+    #    # The rewritten request is passed to S3
+    #    proxy_pass http://cppalliance-previews.s3-website-us-east-1.amazonaws.com;
+    #    #proxy_pass $backendserver;
+    #    include /etc/nginx/proxy_params;
+    #    proxy_redirect /$repo/$pullrequest / ;
+    #}
+    location '/.well-known/acme-challenge' {
+        default_type "text/plain";
+        root /var/www/letsencrypt;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    default_type "text/plain";
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    # include snippets/snakeoil.conf;
+    ssl_certificate /etc/letsencrypt/live/develop.json.cpp.al/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/develop.json.cpp.al/privkey.pem;
+
+    server_name _website_name_;
+
+    if ($host ~* ([0-9]+)\.(.*?)\.(.*)) {
+        set $pullrequest $1;
+        set $repo $2;
+    }
+
+    types {
+        text/plain hpp;
+    }
+    location / {
+        default_type "text/plain";
+        # This code rewrites the original request
+        # E.g. if someone requests
+        # /directory/file.ext?param=value
+        # from the coolsite.com site the request is rewritten to
+        # /coolsite.com/directory/file.ext?param=value
+        set $backendserver 'http://cppalliance-previews.s3-website-us-east-1.amazonaws.com';
+        # echo "$backendserver";
+
+        #CUSTOMIZATIONS
+        #news customization
+        if ($repo = "cppalliance" ) {
+          rewrite ^(.*)/news$ $1/news.html ;
+          rewrite ^(.*)/people/([a-zA-Z0-9]+)$ $1/people/$2.html ;
+        }
+
+        #FINAL REWRITE
+        rewrite ^(.*)$ $backendserver/$repo/$pullrequest$1 break;
+
+
+        # The rewritten request is passed to S3
+        proxy_pass http://cppalliance-previews.s3-website-us-east-1.amazonaws.com;
+        #proxy_pass $backendserver;
+        include /etc/nginx/proxy_params;
+        proxy_redirect /$repo/$pullrequest / ;
+    }
+}
+
