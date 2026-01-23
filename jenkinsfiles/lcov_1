@@ -306,7 +306,7 @@ pipeline {
                 withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
                     s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/genhtml/",  workingDir: 'genhtml' , includePathPattern:'**')
                     s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/gcovr/",  workingDir: 'gcovr' , includePathPattern:'**')
-                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/diff-report/",  workingDir: 'diff-report' , includePathPattern:'**')
+                    // s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/diff-report/",  workingDir: 'diff-report' , includePathPattern:'**')
                 }
                 script {
                     def TIMESTAMP = """${sh(
@@ -314,7 +314,7 @@ pipeline {
                         script: '#!/bin/bash \n' + 'date -u +"%Y-%m-%d %H:%M:%S UTC"'
                     )}"""
 
-                    def commenttext = "GCOVR code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html)\nLCOV code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html)\nCoverage Diff Report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/diff-report/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/diff-report/index.html)"
+                    def commenttext = "GCOVR code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/gcovr/index.html)\nLCOV code coverage report [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/genhtml/index.html)\nCoverage Diff Report (in development) [https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/diff-report/index.html](https://${env.CHANGE_ID}.${env.DNSREPONAME}.${env.PRTEST}.cppalliance.org/diff-report/index.html)"
 
                     if (ALWAYS_NOTIFY == 'false') {
                         commenttext = commenttext + "\n\nBuild time: ${TIMESTAMP}"
