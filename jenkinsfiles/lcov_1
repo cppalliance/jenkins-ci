@@ -267,6 +267,51 @@ pipeline {
             }
         }
 
+        stage('Main branches: Upload to S3') {
+            when {
+                anyOf {
+                    branch 'develop'
+                    branch 'master'
+                }
+            }
+
+            environment {
+                // See https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
+                REPONAME = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${REPONAME}"'
+             )}"""
+                DNSREPONAME = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DNSREPONAME}"'
+             )}"""
+                PRTEST = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PRTEST}"'
+             )}"""
+                ALWAYS_NOTIFY = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${ALWAYS_NOTIFY}"'
+             )}"""
+                PATH_TO_DOCS = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${PATH_TO_DOCS}"'
+             )}"""
+                DIFF2HTML = """${sh(
+                 returnStdout: true,
+                 script: '#!/bin/bash \n' + 'source jenkinsjobinfo.sh; echo -n "${DIFF2HTML}"'
+             )}"""
+            }   
+
+            steps {
+                withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
+                    s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/genhtml/",  workingDir: 'genhtml' , includePathPattern:'**')
+                    s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/gcovr/",  workingDir: 'gcovr' , includePathPattern:'**')
+                    s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/diff-report/",  workingDir: 'diff-report' , includePathPattern:'**')
+                }
+            }
+        }
+
         stage('Pull requests: Upload to S3') {
             when {
                 anyOf {
