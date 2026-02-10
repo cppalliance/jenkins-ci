@@ -11,3 +11,4 @@ echo "export PRTEST=prtest3" >> jenkinsjobinfo.sh
 # Or, URL has already been updated.
 echo "export CXX=/usr/bin/clang++-18" >> jenkinsjobinfo.sh
 echo "export CC=/usr/bin/clang-18" >> jenkinsjobinfo.sh
+echo "export EXTRA_BOOST_LIBRARIES='cppalliance/buffers cppalliance/capy cppalliance/corosio'" >> jenkinsjobinfo.sh
