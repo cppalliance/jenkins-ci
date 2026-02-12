@@ -12,20 +12,31 @@ export HOME=$(pwd)/jenkins_tmp_home
 ls -al ${HOME}
 ls -al /var/lib/jenkins/workspace
 
-mkdir -p ${HOME}/.nvm_${REPONAME}
+if [ -d "/opt/nvm" ]; then
+    export NVM_DIR=/opt/nvm
+    echo "Use shared nvm installation"
+else
+    export NVM_DIR=$HOME/.nvm_${REPONAME}_antora
+    echo "Use home dir nvm installation"
+fi
+mkdir -p "$NVM_DIR"
 export NODE_VERSION=18.18.1
 # The container has a pre-installed nodejs. Overwrite those again.
-export NVM_BIN="${HOME}/.nvm_${REPONAME}/versions/node/v18.18.1/bin"
-export NVM_DIR=${HOME}/.nvm_${REPONAME}
-export NVM_INC=${HOME}/.nvm_${REPONAME}/versions/node/v18.18.1/include/node
+export NVM_BIN="$NVM_DIR/versions/node/v${NODE_VERSION}/bin"
+export NVM_INC=$NVM_DIR/versions/node/v${NODE_VERSION}/include/node
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-export NVM_DIR=${HOME}/.nvm_${REPONAME}
+# shellcheck source=/dev/null
 . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
+# shellcheck source=/dev/null
 . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
+# shellcheck source=/dev/null
 . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
-export PATH="$(pwd)/node_modules/.bin:${HOME}/.nvm_${REPONAME}/versions/node/v${NODE_VERSION}/bin/:${PATH}"
+export PATH="$NVM_DIR/versions/node/v${NODE_VERSION}/bin/:${PATH}"
 node --version
 npm --version
+npm install gulp-cli@2.3.0
+npm install @mermaid-js/mermaid-cli@10.5.1
+
 npm install diff2html-cli
 which diff2html
 
