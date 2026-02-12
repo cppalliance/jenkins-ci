@@ -34,8 +34,12 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
 export PATH="$NVM_DIR/versions/node/v${NODE_VERSION}/bin/:${PATH}"
 node --version
 npm --version
-npm install gulp-cli@2.3.0
-npm install @mermaid-js/mermaid-cli@10.5.1
+if ! which gulp; then
+    npm install -g gulp-cli@2.3.0
+fi
+if ! which mmdc; then
+    npm install -g @mermaid-js/mermaid-cli@10.5.1
+fi
 
 npm install diff2html-cli
 which diff2html
