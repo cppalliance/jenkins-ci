@@ -90,6 +90,7 @@ pipeline {
                 pwd
                 env
                 whoami
+                id
                 touch $(date "+%A-%B-%d-%T-%y")
                 mount | grep ^/dev/ | grep -v /etc | awk '{print \$3}'
                 git branch
@@ -433,6 +434,7 @@ pipeline {
                 pwd
                 env
                 whoami
+                id
                 touch $(date "+%A-%B-%d-%T-%y")
                 mount | grep ^/dev/ | grep -v /etc | awk '{print \$3}'
                 git branch

@@ -88,6 +88,7 @@ pipeline {
                 pwd
                 env
                 whoami
+                id
                 ls -al /var/lib/jenkins/
                 ls -al /var/lib/jenkins/workspace/
                 touch $(date "+%A-%B-%d-%T-%y")
@@ -220,6 +221,7 @@ pipeline {
 
                 if [ -d "/opt/nvm" ]; then
                     export NVM_DIR=/opt/nvm
+                    export sharednvm=yes
                     echo "Use shared nvm installation"
                 else
                     export NVM_DIR=$HOME/.nvm_${REPONAME}_antora
@@ -230,7 +232,9 @@ pipeline {
                 # The container has a pre-installed nodejs. Overwrite those again.
                 export NVM_BIN="$NVM_DIR/versions/node/v${NODE_VERSION}/bin"
                 export NVM_INC=$NVM_DIR/versions/node/v${NODE_VERSION}/include/node
-                curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+                if [ ! "$sharednvm" = "yes" ]; then
+                    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+                fi
                 # shellcheck source=/dev/null
                 . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
                 # shellcheck source=/dev/null
@@ -487,6 +491,7 @@ pipeline {
                 pwd
                 env
                 whoami
+                id
                 touch $(date "+%A-%B-%d-%T-%y")
                 mount | grep ^/dev/ | grep -v /etc | awk '{print \$3}'
                 git branch
