@@ -232,9 +232,10 @@ pipeline {
                 # The container has a pre-installed nodejs. Overwrite those again.
                 export NVM_BIN="$NVM_DIR/versions/node/v${NODE_VERSION}/bin"
                 export NVM_INC=$NVM_DIR/versions/node/v${NODE_VERSION}/include/node
-                if [ ! "$sharednvm" = "yes" ]; then
+                # will this work now?
+                # if [ ! "$sharednvm" = "yes" ]; then
                     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-                fi
+                # fi
                 # shellcheck source=/dev/null
                 . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
                 # shellcheck source=/dev/null
