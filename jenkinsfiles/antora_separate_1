@@ -83,6 +83,7 @@ pipeline {
                 cat jenkinsjobinfo.sh
                 . jenkinsjobinfo.sh
                 ls -al
+                ls -al /opt
                 cat /etc/os-release
                 pwd
                 env
@@ -474,6 +475,7 @@ pipeline {
                 cat jenkinsjobinfo.sh
                 . jenkinsjobinfo.sh
                 ls -al
+                ls -al /opt
                 cat /etc/os-release
                 pwd
                 env
