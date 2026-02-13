@@ -307,6 +307,7 @@ pipeline {
                 withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
                     s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/genhtml/",  workingDir: 'genhtml' , includePathPattern:'**')
                     s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/gcovr/",  workingDir: 'gcovr' , includePathPattern:'**')
+                    s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/gcovr-flat/",  workingDir: 'gcovr-flat' , includePathPattern:'**')
                     s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/diff-report/",  workingDir: 'diff-report' , includePathPattern:'**')
                 }
             }
@@ -351,6 +352,7 @@ pipeline {
                 withAWS(region:'us-east-1', credentials: 'cppalliance-bot-aws-user') {
                     s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/genhtml/",  workingDir: 'genhtml' , includePathPattern:'**')
                     s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/gcovr/",  workingDir: 'gcovr' , includePathPattern:'**')
+                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/gcovr-flat/",  workingDir: 'gcovr-flat' , includePathPattern:'**')
                     s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/diff-report/",  workingDir: 'diff-report' , includePathPattern:'**')
                 }
                 script {
