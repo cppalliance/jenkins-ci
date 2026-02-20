@@ -309,12 +309,10 @@ pipeline {
                         set -xe
                         aws s3 rm --recursive s3://cppalliance-websites/${BRANCH_NAME}.${DNSREPONAME}.cpp.al/genhtml/
                         aws s3 rm --recursive s3://cppalliance-websites/${BRANCH_NAME}.${DNSREPONAME}.cpp.al/gcovr/
-                        aws s3 rm --recursive s3://cppalliance-websites/${BRANCH_NAME}.${DNSREPONAME}.cpp.al/gcovr-flat/
                         aws s3 rm --recursive s3://cppalliance-websites/${BRANCH_NAME}.${DNSREPONAME}.cpp.al/diff-report/
                     '''
                     s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/genhtml/",  workingDir: 'genhtml' , includePathPattern:'**')
                     s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/gcovr/",  workingDir: 'gcovr' , includePathPattern:'**')
-                    s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/gcovr-flat/",  workingDir: 'gcovr-flat' , includePathPattern:'**')
                     s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al/diff-report/",  workingDir: 'diff-report' , includePathPattern:'**')
                 }
             }
@@ -361,12 +359,10 @@ pipeline {
                         set -xe
                         aws s3 rm --recursive s3://cppalliance-previews/${DNSREPONAME}/${CHANGE_ID}/genhtml/
                         aws s3 rm --recursive s3://cppalliance-previews/${DNSREPONAME}/${CHANGE_ID}/gcovr/
-                        aws s3 rm --recursive s3://cppalliance-previews/${DNSREPONAME}/${CHANGE_ID}/gcovr-flat/
                         aws s3 rm --recursive s3://cppalliance-previews/${DNSREPONAME}/${CHANGE_ID}/diff-report/
                     '''
                     s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/genhtml/",  workingDir: 'genhtml' , includePathPattern:'**')
                     s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/gcovr/",  workingDir: 'gcovr' , includePathPattern:'**')
-                    s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/gcovr-flat/",  workingDir: 'gcovr-flat' , includePathPattern:'**')
                     s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/diff-report/",  workingDir: 'diff-report' , includePathPattern:'**')
                 }
                 script {
