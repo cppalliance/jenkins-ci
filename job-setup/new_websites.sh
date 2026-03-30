@@ -17,6 +17,10 @@ export dns_cloudflare_api_token="__"
 
 website-templates/base_pr_template and base_website_template are required files
 but should already be present in the website-templates directory here.
+
+/etc/letsencrypt/.secret contains
+# Cloudflare API token used by Certbot
+dns_cloudflare_api_token = ____
 '
 
 scriptname="new_websites.sh"
