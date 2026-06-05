@@ -340,7 +340,6 @@ prebuild_script=$(cat <<EOF
 
 set -xe
 echo "export PRTEST=prtest3" >> jenkinsjobinfo.sh
-echo "export ONLY_BUILD_ON_DOCS_MODIFICATION=true" >> jenkinsjobinfo.sh
 echo "export EXTRA_BOOST_LIBRARIES='cppalliance/buffers cppalliance/capy cppalliance/corosio cppalliance/http'" >> jenkinsjobinfo.sh
 
 EOF
