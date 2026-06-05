@@ -11,7 +11,7 @@ set -e
 set -x
 
 scriptname="create-jenkins-job.sh"
-scriptlocation=$(pwd)
+scriptlocation="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 # set defaults:
 
@@ -347,6 +347,9 @@ EOF
 
     echo "${prebuild_script}" > "scripts/${github_test_org}_${repo_name}_prebuild.sh"
     chmod 755 "scripts/${github_test_org}_${repo_name}_prebuild.sh"
+    # The above steps are incomplete, this needs to be pushed, which hasn't been tested yet.
+    git push --track origin/testing --force
+
     echo "Testing branch configured successfully"
     cd "${previousdir}"
     set +x
