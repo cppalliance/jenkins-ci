@@ -44,4 +44,4 @@ npm ci
 # In the case of PRs, the local version should be used instead.
 # npx antora local-antora-playbook.yml
 # npx antora --log-level debug antora-playbook.yml --attribute branchesarray=HEAD
-npx antora antora-playbook.yml --attribute branchesarray=HEAD
+npx antora antora-playbook.yml --attribute branchesarray=HEAD --start-page HEAD@mrdocs::index.adoc
