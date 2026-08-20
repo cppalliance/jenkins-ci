@@ -248,6 +248,7 @@ pipeline {
                     sh '''#!/bin/bash
                         set -xe
                         aws s3 rm --recursive s3://cppalliance-websites/${BRANCH_NAME}.${DNSREPONAME}.cpp.al/
+                        sleep 5
                     '''
                     s3Upload(bucket:'cppalliance-websites', path:"${BRANCH_NAME}.${DNSREPONAME}.cpp.al", workingDir: 'build', includePathPattern:'**')
                 }
@@ -286,6 +287,7 @@ pipeline {
                     sh '''#!/bin/bash
                         set -xe
                         aws s3 rm --recursive s3://cppalliance-previews/${DNSREPONAME}/${CHANGE_ID}/
+                        sleep 5
                     '''
 
                     s3Upload(bucket:'cppalliance-previews', path:"${DNSREPONAME}/${CHANGE_ID}/",  workingDir: 'build' , includePathPattern:'**')
