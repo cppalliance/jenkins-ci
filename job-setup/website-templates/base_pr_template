@@ -5,9 +5,9 @@ server {
     # Catch all other server names
     server_name _website_name_;
 
-    if ($host ~* ([0-9]+)\.(.*?)\.(.*)) {
-        set $pullrequest $1;
-        set $repo $2;
+    if ($host ~* "^(?<pullrequest>[0-9]+)\.(?<repo>[^.]+)\.(?<domain>.+)$") {
+        set $pullrequest $pullrequest;
+        set $repo $repo;
     }
 
     #location / {
@@ -55,9 +55,9 @@ server {
 
     server_name _website_name_;
 
-    if ($host ~* ([0-9]+)\.(.*?)\.(.*)) {
-        set $pullrequest $1;
-        set $repo $2;
+    if ($host ~* "^(?<pullrequest>[0-9]+)\.(?<repo>[^.]+)\.(?<domain>.+)$") {
+        set $pullrequest $pullrequest;
+        set $repo $repo;
     }
 
     types {
