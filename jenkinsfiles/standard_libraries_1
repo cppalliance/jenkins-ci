@@ -7,7 +7,7 @@ pipeline {
 
     agent {
         docker {
-            image 'cppalliance/boost_superproject_build:24.04-v5'
+            image 'cppalliance/boost_superproject_build:26.04-v1'
             args '-v /var/lib/jenkins/jenkinsfilecache:/jenkinsfilecache --group-add 151'
         // label 'jenkinspool1'
         }
