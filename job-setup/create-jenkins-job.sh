@@ -185,7 +185,7 @@ function initial_main_setup {
     if [ -f doc/build_antora.sh ] ; then
         job_type="antora_libraries_1"
     else
-        job_type="standard_libraries_1"
+        job_type="antora_separate_1"
     fi
     
     tmpdir=$(mktemp -d)
